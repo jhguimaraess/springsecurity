@@ -1,6 +1,8 @@
 package com.project.springsecurity.entities;
 
+import com.project.springsecurity.controller.dto.LoginRequest;
 import jakarta.persistence.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Set;
 import java.util.UUID;
@@ -15,7 +17,7 @@ public class User {
     private UUID userId;
 
     @Column(unique = true)
-    private String userName;
+    private String username;
 
     private String password;
 
@@ -51,11 +53,17 @@ public class User {
         this.userId = userId;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+
+
+    public boolean isLoginCorrct(LoginRequest loginRequest, PasswordEncoder passwordEncoder) {
+        return passwordEncoder.matches(loginRequest.password(), this.password);
     }
 }
