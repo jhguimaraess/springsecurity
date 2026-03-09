@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+### Segurança (Chaves RSA) ###
+*.key
+*.pem
+!*.pub
