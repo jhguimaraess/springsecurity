@@ -2,6 +2,7 @@ package com.project.springsecurity.controller;
 
 import com.project.springsecurity.controller.dto.CreatePostDto;
 import com.project.springsecurity.entities.Post;
+import com.project.springsecurity.entities.Role;
 import com.project.springsecurity.repository.PostRepository;
 import com.project.springsecurity.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -44,7 +45,13 @@ public class PostController {
         var post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if(post.getUser().getUserId().equals(UUID.fromString(token.getName()))){
+        var user = userRepository.findById(UUID.fromString(token.getName()));
+
+        var isAdmin = user.get().getRoles()
+                    .stream()
+                    .anyMatch(role -> role.getName().equalsIgnoreCase(Role.Values.ADMIN.name()));
+
+        if(isAdmin || post.getUser().getUserId().equals(UUID.fromString(token.getName()))){
             postRepository.deleteById(postId);
         }else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
