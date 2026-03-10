@@ -1,10 +1,14 @@
 package com.project.springsecurity.controller;
 
 import com.project.springsecurity.controller.dto.CreatePostDto;
+import com.project.springsecurity.controller.dto.FeedDto;
+import com.project.springsecurity.controller.dto.FeedItemDto;
 import com.project.springsecurity.entities.Post;
 import com.project.springsecurity.entities.Role;
 import com.project.springsecurity.repository.PostRepository;
 import com.project.springsecurity.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -58,5 +62,20 @@ public class PostController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("feed")
+    public ResponseEntity<FeedDto> feed(@RequestParam(value = "page", defaultValue = "0") int page,
+                                        @RequestParam(value = "pageSize", defaultValue = "10") int pageSize){
+        var posts = postRepository.findAll(
+                PageRequest.of(page, pageSize, Sort.Direction.DESC, "creationTimestamp"))
+                .map(post ->
+                        new FeedItemDto(
+                                post.getPostId(),
+                                post.getContent(),
+                                post.getUser().getUsername())
+                );
+
+        return ResponseEntity.ok(new FeedDto(posts.getContent(), page, pageSize, posts.getTotalPages(), posts.getTotalElements()));
     }
 }
