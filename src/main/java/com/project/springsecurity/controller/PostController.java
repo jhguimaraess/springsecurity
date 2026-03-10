@@ -4,11 +4,11 @@ import com.project.springsecurity.controller.dto.CreatePostDto;
 import com.project.springsecurity.entities.Post;
 import com.project.springsecurity.repository.PostRepository;
 import com.project.springsecurity.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -34,6 +34,21 @@ public class PostController {
         post.setUser(user.get());
 
         postRepository.save(post);
+
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/posts/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable("id") Long postId,
+                                           JwtAuthenticationToken token){
+        var post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if(post.getUser().getUserId().equals(UUID.fromString(token.getName()))){
+            postRepository.deleteById(postId);
+        }else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         return ResponseEntity.ok().build();
     }
