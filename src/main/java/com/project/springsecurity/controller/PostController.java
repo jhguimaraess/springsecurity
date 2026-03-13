@@ -3,79 +3,45 @@ package com.project.springsecurity.controller;
 import com.project.springsecurity.controller.dto.CreatePostDto;
 import com.project.springsecurity.controller.dto.FeedDto;
 import com.project.springsecurity.controller.dto.FeedItemDto;
-import com.project.springsecurity.entities.Post;
-import com.project.springsecurity.entities.Role;
 import com.project.springsecurity.repository.PostRepository;
-import com.project.springsecurity.repository.UserRepository;
+import com.project.springsecurity.service.PostService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.UUID;
 
 @RestController
 public class PostController {
 
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostService postService;
 
-    public PostController(PostRepository postRepository, UserRepository userRepository) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
+    public PostController(PostService postService) {
+        this.postService = postService;
     }
 
     @PostMapping("/posts")
-    public ResponseEntity<Void> createPost(@RequestBody CreatePostDto dto,
-                                           JwtAuthenticationToken token){
-
-        var user = userRepository.findById(UUID.fromString(token.getName()));  //token.getName()  retorna o subject do jwt
-
-        var post = new Post();
-        post.setContent(dto.content());
-        post.setUser(user.get());
-
-        postRepository.save(post);
-
+    public ResponseEntity<Void> createPost(@RequestBody CreatePostDto dto, JwtAuthenticationToken token){
+        postService.createPost(dto, token);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable("id") Long postId,
                                            JwtAuthenticationToken token){
-        var post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        var user = userRepository.findById(UUID.fromString(token.getName()));
-
-        var isAdmin = user.get().getRoles()
-                    .stream()
-                    .anyMatch(role -> role.getName().equalsIgnoreCase(Role.Values.ADMIN.name()));
-
-        if(isAdmin || post.getUser().getUserId().equals(UUID.fromString(token.getName()))){
-            postRepository.deleteById(postId);
-        }else {
+        try{
+            postService.deletePost(postId, token);
+            return ResponseEntity.ok().build();
+        }catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-
-        return ResponseEntity.ok().build();
     }
 
     @GetMapping("feed")
     public ResponseEntity<FeedDto> feed(@RequestParam(value = "page", defaultValue = "0") int page,
                                         @RequestParam(value = "pageSize", defaultValue = "10") int pageSize){
-        var posts = postRepository.findAll(
-                PageRequest.of(page, pageSize, Sort.Direction.DESC, "creationTimestamp"))
-                .map(post ->
-                        new FeedItemDto(
-                                post.getPostId(),
-                                post.getContent(),
-                                post.getUser().getUsername())
-                );
-
-        return ResponseEntity.ok(new FeedDto(posts.getContent(), page, pageSize, posts.getTotalPages(), posts.getTotalElements()));
+        return ResponseEntity.ok(postService.feed(page, pageSize));
     }
 }
