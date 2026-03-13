@@ -2,11 +2,7 @@ package com.project.springsecurity.controller;
 
 import com.project.springsecurity.controller.dto.CreatePostDto;
 import com.project.springsecurity.controller.dto.FeedDto;
-import com.project.springsecurity.controller.dto.FeedItemDto;
-import com.project.springsecurity.repository.PostRepository;
 import com.project.springsecurity.service.PostService;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
